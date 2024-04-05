@@ -11,4 +11,4 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = "0.20.0"
 mzdata = "0.13.0"
-timsrust = "0.2.3"
+timsrust = "0.2.4"

@@ -30,7 +30,7 @@ def test_bruker_tdf_reading():
 
 
 def test_bruker_minitdf_reading():
-    precursor = get_precursor_info("tests/data/test.ms2")["2"]
+    precursor = get_precursor_info("tests/data/test.ms2")["3"]
     assert precursor.mz == pytest.approx(502, 0.0001)
     assert precursor.charge == 2
     assert precursor.intensity == 0
