@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::ms2_spectrum::MS2Spectrum;
 use crate::precursor::Precursor;
 
 impl From<timsrust::Precursor> for Precursor {
@@ -11,6 +12,24 @@ impl From<timsrust::Precursor> for Precursor {
             charge: precursor.charge,
             intensity: precursor.intensity,
         }
+    }
+}
+
+impl From<timsrust::Spectrum> for MS2Spectrum {
+    fn from(spectrum: timsrust::Spectrum) -> Self {
+        MS2Spectrum::new(
+            spectrum.index.to_string(),
+            spectrum.mz_values.iter().map(|mz| *mz as f32).collect(),
+            spectrum
+                .intensities
+                .iter()
+                .map(|intensity| *intensity as f32)
+                .collect(),
+            match spectrum.precursor {
+                timsrust::QuadrupoleEvent::Precursor(precursor) => Some(Precursor::from(precursor)),
+                _ => None,
+            },
+        )
     }
 }
 
@@ -37,4 +56,16 @@ pub fn parse_precursor_info(
             )
         })
         .collect::<HashMap<String, Precursor>>())
+}
+
+/// Read MS2 spectra from spectrum files with timsrust
+pub fn read_ms2_spectra(spectrum_path: &str) -> Result<Vec<MS2Spectrum>, std::io::Error> {
+    let reader = timsrust::FileReader::new(spectrum_path)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+
+    Ok(reader
+        .read_all_spectra()
+        .into_iter()
+        .map(MS2Spectrum::from)
+        .collect())
 }

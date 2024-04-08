@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 
 /// Precursor information.
 #[pyclass(get_all, set_all)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Precursor {
     pub mz: f64,
     pub rt: f64,

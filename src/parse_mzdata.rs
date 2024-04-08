@@ -4,10 +4,11 @@ use std::fs::File;
 use mzdata::io::{MGFReader, MzMLReader};
 
 use crate::file_types::SpectrumFileType;
+use crate::ms2_spectrum::MS2Spectrum;
 use crate::precursor::Precursor;
 
-impl From<mzdata::spectrum::MultiLayerSpectrum> for Precursor {
-    fn from(spectrum: mzdata::spectrum::MultiLayerSpectrum) -> Self {
+impl From<&mzdata::spectrum::MultiLayerSpectrum> for Precursor {
+    fn from(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> Self {
         let precursor = &spectrum.description.precursor;
         match precursor {
             Some(precursor) => Precursor {
@@ -18,15 +19,30 @@ impl From<mzdata::spectrum::MultiLayerSpectrum> for Precursor {
                     .first_scan()
                     .map(|s| s.start_time)
                     .unwrap_or(0.0),
-                im: get_im_from_spectrum_description(&spectrum)
-                    .or(get_im_from_selected_ion(&spectrum))
-                    .or(get_im_from_first_scan(&spectrum))
+                im: get_im_from_spectrum_description(spectrum)
+                    .or(get_im_from_selected_ion(spectrum))
+                    .or(get_im_from_first_scan(spectrum))
                     .unwrap_or(0.0),
-                charge: get_charge_from_spectrum(&spectrum).unwrap_or(0),
+                charge: get_charge_from_spectrum(spectrum).unwrap_or(0),
                 intensity: precursor.ions[0].intensity as f64,
             },
             None => Precursor::default(),
         }
+    }
+}
+
+impl From<mzdata::spectrum::MultiLayerSpectrum> for MS2Spectrum {
+    fn from(spectrum: mzdata::spectrum::MultiLayerSpectrum) -> Self {
+        let identifier: String = spectrum.description.id.to_string();
+        let precursor = Precursor::from(&spectrum);
+        let mzdata_centroid_spectrum = spectrum.into_centroid().unwrap();
+        let (mz, intensity): (Vec<f32>, Vec<f32>) = mzdata_centroid_spectrum
+            .peaks
+            .iter()
+            .map(|peak| (peak.mz as f32, peak.intensity))
+            .unzip();
+
+        MS2Spectrum::new(identifier, mz, intensity, Some(precursor))
     }
 }
 
@@ -40,7 +56,7 @@ pub fn parse_precursor_info(
         SpectrumFileType::MascotGenericFormat => Ok(MGFReader::new(file)
             .filter_map(|spectrum| {
                 spectrum.description.precursor.as_ref()?;
-                Some((spectrum.description.id.clone(), Precursor::from(spectrum)))
+                Some((spectrum.description.id.clone(), Precursor::from(&spectrum)))
             })
             .collect::<HashMap<String, Precursor>>()),
 
@@ -50,9 +66,32 @@ pub fn parse_precursor_info(
                     return None;
                 }
                 spectrum.description.precursor.as_ref()?;
-                Some((spectrum.description.id.clone(), Precursor::from(spectrum)))
+                Some((spectrum.description.id.clone(), Precursor::from(&spectrum)))
             })
             .collect::<HashMap<String, Precursor>>()),
+
+        _ => Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Unsupported file type for mzdata",
+        )),
+    }
+}
+
+/// Read MS2 spectra from spectrum files with mzdata
+pub fn read_ms2_spectra(
+    spectrum_path: &str,
+    file_type: SpectrumFileType,
+) -> Result<Vec<MS2Spectrum>, std::io::Error> {
+    let file = File::open(spectrum_path)?;
+    match file_type {
+        SpectrumFileType::MascotGenericFormat => Ok(MGFReader::new(file)
+            .map(MS2Spectrum::from)
+            .collect::<Vec<MS2Spectrum>>()),
+
+        SpectrumFileType::MzML => Ok(MzMLReader::new(file)
+            .filter(|spectrum| spectrum.description.ms_level == 2)
+            .map(MS2Spectrum::from)
+            .collect::<Vec<MS2Spectrum>>()),
 
         _ => Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
