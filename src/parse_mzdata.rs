@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 
 use mzdata::io::{MGFReader, MzMLReader};
+use mzdata::params::ParamValue;
 
 use crate::file_types::SpectrumFileType;
 use crate::ms2_spectrum::MS2Spectrum;
@@ -127,8 +128,13 @@ fn get_charge_from_spectrum(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> 
                 .params
                 .iter()
                 .find(|p| p.name == "charge")
-                .map(|p| p.value.strip_suffix('+').unwrap_or(&p.value))
-                .map(|v| v.parse::<usize>().unwrap_or(0))
+                .map(|p| p.value.to_string())
+                .and_then(|v| {
+                    v.strip_suffix('+')
+                        .unwrap_or(v.as_str())
+                        .parse::<usize>()
+                        .ok()
+                })
         })
 }
 
@@ -145,11 +151,7 @@ fn get_im_from_spectrum_description(
                 || (p.name == "inverse reduced ion mobility")
                 || (p.name == "reverse ion mobility")
         })
-        .map(|p| p.value.clone())
-        .map(|v| match v.parse::<f64>() {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        })?
+        .and_then(|p| p.value.to_f64().ok())
 }
 
 /// Try to get ion mobility from the selected ion parameters.
@@ -167,12 +169,8 @@ fn get_im_from_selected_ion(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> 
                         || (p.name == "inverse reduced ion mobility")
                         || (p.name == "reverse ion mobility")
                 })
-                .map(|p| p.value.clone())
-                .map(|v| match v.parse::<f64>() {
-                    Ok(v) => Some(v),
-                    Err(_) => None,
-                })
-        })?
+                .and_then(|p| p.value.to_f64().ok())
+        })
 }
 
 /// Try to get ion mobility from the first scan parameters.
@@ -189,10 +187,6 @@ fn get_im_from_first_scan(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> Op
                         || (p.name == "inverse reduced ion mobility")
                         || (p.name == "reverse ion mobility")
                 })
-                .map(|p| p.value.clone())
-                .map(|v| match v.parse::<f64>() {
-                    Ok(v) => Some(v),
-                    Err(_) => None,
-                })
-        })?
+                .and_then(|p| p.value.to_f64().ok())
+        })
 }
