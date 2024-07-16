@@ -3,20 +3,20 @@ use std::collections::HashMap;
 use crate::ms2_spectrum::MS2Spectrum;
 use crate::precursor::Precursor;
 
-impl From<timsrust::Precursor> for Precursor {
-    fn from(precursor: timsrust::Precursor) -> Self {
+impl From<timsrust::ms_data::Precursor> for Precursor {
+    fn from(precursor: timsrust::ms_data::Precursor) -> Self {
         Precursor {
             mz: precursor.mz,
             rt: precursor.rt,
             im: precursor.im,
-            charge: precursor.charge,
-            intensity: precursor.intensity,
+            charge: precursor.charge.unwrap_or(0),
+            intensity: precursor.intensity.unwrap_or(0.0),
         }
     }
 }
 
-impl From<timsrust::Spectrum> for MS2Spectrum {
-    fn from(spectrum: timsrust::Spectrum) -> Self {
+impl From<timsrust::ms_data::Spectrum> for MS2Spectrum {
+    fn from(spectrum: timsrust::ms_data::Spectrum) -> Self {
         MS2Spectrum::new(
             spectrum.index.to_string(),
             spectrum.mz_values.iter().map(|mz| *mz as f32).collect(),
@@ -25,10 +25,7 @@ impl From<timsrust::Spectrum> for MS2Spectrum {
                 .iter()
                 .map(|intensity| *intensity as f32)
                 .collect(),
-            match spectrum.precursor {
-                timsrust::QuadrupoleEvent::Precursor(precursor) => Some(Precursor::from(precursor)),
-                _ => None,
-            },
+            Some(Precursor::from(spectrum.precursor)),
         )
     }
 }
@@ -46,13 +43,13 @@ pub fn parse_precursor_info(
         .filter(|spectrum| {
             matches!(
                 spectrum.precursor,
-                timsrust::QuadrupoleEvent::Precursor { .. }
+                timsrust::ms_data::Precursor { .. }
             )
         })
         .map(|spectrum| {
             (
                 spectrum.index.to_string(),
-                Precursor::from(spectrum.precursor.unwrap_as_precursor()),
+                Precursor::from(spectrum.precursor),
             )
         })
         .collect::<HashMap<String, Precursor>>())

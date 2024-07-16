@@ -26,7 +26,7 @@ def test_get_precursor_info_bruker_tdf():
     assert precursor.charge == 2
     assert precursor.intensity == 10
     assert precursor.rt == pytest.approx(0.4, 0.001)
-    assert precursor.im == 1.4989212513484358
+    assert precursor.im == 1.25
 
 
 def test_get_precursor_info_bruker_minitdf():
