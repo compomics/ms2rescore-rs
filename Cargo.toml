@@ -12,3 +12,4 @@ crate-type = ["cdylib"]
 pyo3 = "0.20.0"
 mzdata = "0.20.0"
 timsrust = "0.3.0"
+mzpeaks = "0.17.0"
