@@ -20,7 +20,7 @@ pub fn get_precursor_info(spectrum_path: String) -> PyResult<HashMap<String, Pre
 
     let precursors = match file_type {
         SpectrumFileType::MascotGenericFormat | SpectrumFileType::MzML => {
-            parse_mzdata::parse_precursor_info(&spectrum_path, file_type)
+            parse_mzdata::parse_precursor_info(&spectrum_path)
         }
         SpectrumFileType::BrukerRaw => parse_timsrust::parse_precursor_info(&spectrum_path),
         // SpectrumFileType::ThermoRaw => parse_with_mzdata_thermo(&spectrum_path, file_type),
