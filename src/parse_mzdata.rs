@@ -1,11 +1,8 @@
 use std::collections::HashMap;
-use std::fs::File;
 
-use mzdata::io::{MGFReader, MzMLReader};
 use mzdata::params::ParamValue;
 use mzdata::mz_read;
 
-use crate::file_types::SpectrumFileType;
 use crate::ms2_spectrum::MS2Spectrum;
 use crate::precursor::Precursor;
 
@@ -51,32 +48,15 @@ impl From<mzdata::spectrum::MultiLayerSpectrum> for MS2Spectrum {
 /// Parse precursor info from spectrum files with mzdata
 pub fn parse_precursor_info(
     spectrum_path: &str,
-    file_type: SpectrumFileType,
 ) -> Result<HashMap<String, Precursor>, std::io::Error> {
-    let file = File::open(spectrum_path)?;
-    match file_type {
-        SpectrumFileType::MascotGenericFormat => Ok(MGFReader::new(file)
+    mz_read!(spectrum_path.as_ref(), reader => {
+        reader.filter(|spectrum| spectrum.description.ms_level == 2)
             .filter_map(|spectrum| {
                 spectrum.description.precursor.as_ref()?;
                 Some((spectrum.description.id.clone(), Precursor::from(&spectrum)))
             })
-            .collect::<HashMap<String, Precursor>>()),
-
-        SpectrumFileType::MzML => Ok(MzMLReader::new(file)
-            .filter_map(|spectrum| {
-                if spectrum.description.ms_level != 2 {
-                    return None;
-                }
-                spectrum.description.precursor.as_ref()?;
-                Some((spectrum.description.id.clone(), Precursor::from(&spectrum)))
-            })
-            .collect::<HashMap<String, Precursor>>()),
-
-        _ => Err(std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "Unsupported file type for mzdata",
-        )),
-    }
+            .collect::<HashMap<String, Precursor>>()
+    })
 }
 
 /// Read MS2 spectra from spectrum files with mzdata
