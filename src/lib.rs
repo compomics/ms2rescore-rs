@@ -19,11 +19,10 @@ pub fn get_precursor_info(spectrum_path: String) -> PyResult<HashMap<String, Pre
     let file_type = match_file_type(&spectrum_path);
 
     let precursors = match file_type {
-        SpectrumFileType::MascotGenericFormat | SpectrumFileType::MzML => {
+        SpectrumFileType::MascotGenericFormat | SpectrumFileType::MzML | SpectrumFileType::MzMLb | SpectrumFileType:: ThermoRaw => {
             parse_mzdata::parse_precursor_info(&spectrum_path)
         }
         SpectrumFileType::BrukerRaw => parse_timsrust::parse_precursor_info(&spectrum_path),
-        // SpectrumFileType::ThermoRaw => parse_with_mzdata_thermo(&spectrum_path, file_type),
         SpectrumFileType::Unknown => return Err(PyOSError::new_err("Unsupported file type")),
     };
 
@@ -39,11 +38,10 @@ pub fn get_ms2_spectra(spectrum_path: String) -> PyResult<Vec<ms2_spectrum::MS2S
     let file_type = match_file_type(&spectrum_path);
 
     let spectra = match file_type {
-        SpectrumFileType::MascotGenericFormat | SpectrumFileType::MzML => {
+        SpectrumFileType::MascotGenericFormat | SpectrumFileType::MzML | SpectrumFileType::MzMLb | SpectrumFileType:: ThermoRaw => {
             parse_mzdata::read_ms2_spectra(&spectrum_path)
         }
         SpectrumFileType::BrukerRaw => parse_timsrust::read_ms2_spectra(&spectrum_path),
-        // SpectrumFileType::ThermoRaw => parse_with_mzdata_thermo(&spectrum_path, file_type),
         SpectrumFileType::Unknown => return Err(PyOSError::new_err("Unsupported file type")),
     };
 
