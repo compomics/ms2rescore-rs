@@ -3,6 +3,7 @@ use std::fs::File;
 
 use mzdata::io::{MGFReader, MzMLReader};
 use mzdata::params::ParamValue;
+use mzdata::mz_read;
 
 use crate::file_types::SpectrumFileType;
 use crate::ms2_spectrum::MS2Spectrum;
@@ -81,24 +82,12 @@ pub fn parse_precursor_info(
 /// Read MS2 spectra from spectrum files with mzdata
 pub fn read_ms2_spectra(
     spectrum_path: &str,
-    file_type: SpectrumFileType,
 ) -> Result<Vec<MS2Spectrum>, std::io::Error> {
-    let file = File::open(spectrum_path)?;
-    match file_type {
-        SpectrumFileType::MascotGenericFormat => Ok(MGFReader::new(file)
+    mz_read!(spectrum_path.as_ref(), reader => {
+        reader.filter(|spectrum| spectrum.description.ms_level == 2)
             .map(MS2Spectrum::from)
-            .collect::<Vec<MS2Spectrum>>()),
-
-        SpectrumFileType::MzML => Ok(MzMLReader::new(file)
-            .filter(|spectrum| spectrum.description.ms_level == 2)
-            .map(MS2Spectrum::from)
-            .collect::<Vec<MS2Spectrum>>()),
-
-        _ => Err(std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "Unsupported file type for mzdata",
-        )),
-    }
+            .collect::<Vec<MS2Spectrum>>()
+    })
 }
 
 // pub fn parse_precursor_info_thermo(

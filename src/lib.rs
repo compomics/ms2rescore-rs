@@ -40,7 +40,7 @@ pub fn get_ms2_spectra(spectrum_path: String) -> PyResult<Vec<ms2_spectrum::MS2S
 
     let spectra = match file_type {
         SpectrumFileType::MascotGenericFormat | SpectrumFileType::MzML => {
-            parse_mzdata::read_ms2_spectra(&spectrum_path, file_type)
+            parse_mzdata::read_ms2_spectra(&spectrum_path)
         }
         SpectrumFileType::BrukerRaw => parse_timsrust::read_ms2_spectra(&spectrum_path),
         // SpectrumFileType::ThermoRaw => parse_with_mzdata_thermo(&spectrum_path, file_type),
