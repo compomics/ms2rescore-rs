@@ -1,25 +1,34 @@
+use mzdata::io::MassSpectrometryFormat;
+
 pub enum SpectrumFileType {
     MascotGenericFormat,
     MzML,
+    MzMLb,
     BrukerRaw,
-    // ThermoRaw,
+    ThermoRaw,
     Unknown,
 }
 
 pub fn match_file_type(spectrum_path: &str) -> SpectrumFileType {
-    let extension = spectrum_path.split('.').last().unwrap_or("").to_lowercase();
-    match extension.as_str() {
-        "mgf" => SpectrumFileType::MascotGenericFormat,
-        "mzml" => SpectrumFileType::MzML,
-        "d" | "ms2" => SpectrumFileType::BrukerRaw,
-        // "raw" => SpectrumFileType::ThermoRaw,
-        _ => match (
-            folder_contains_extension(spectrum_path, "bin"),
-            folder_contains_extension(spectrum_path, "parquet"),
-        ) {
-            (true, true) => SpectrumFileType::BrukerRaw,
-            _ => SpectrumFileType::Unknown,
-        },
+    match mzdata::io::infer_from_path(spectrum_path).0 {
+        MassSpectrometryFormat::MGF => SpectrumFileType::MascotGenericFormat,
+        MassSpectrometryFormat::MzML => SpectrumFileType::MzML,
+        MassSpectrometryFormat::MzMLb => SpectrumFileType::MzMLb,
+        MassSpectrometryFormat::ThermoRaw => SpectrumFileType::ThermoRaw,
+        MassSpectrometryFormat::Unknown => {
+            let extension = spectrum_path.split('.').last().unwrap_or("").to_lowercase();
+            match extension.as_str() {
+                "d" | "ms2" => SpectrumFileType::BrukerRaw,
+                _ => match (
+                    folder_contains_extension(spectrum_path, "bin"),
+                    folder_contains_extension(spectrum_path, "parquet"),
+                ) {
+                    (true, true) => SpectrumFileType::BrukerRaw,
+                    _ => SpectrumFileType::Unknown,
+                },
+            }
+        }
+        _ => SpectrumFileType::Unknown
     }
 }
 
