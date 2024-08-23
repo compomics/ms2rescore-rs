@@ -6,7 +6,7 @@ mod ms2_spectrum;
 
 use std::collections::HashMap;
 
-use pyo3::exceptions::PyOSError;
+use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::prelude::*;
 
 use file_types::{match_file_type, SpectrumFileType};
@@ -23,12 +23,12 @@ pub fn get_precursor_info(spectrum_path: String) -> PyResult<HashMap<String, Pre
             parse_mzdata::parse_precursor_info(&spectrum_path)
         }
         SpectrumFileType::BrukerRaw => parse_timsrust::parse_precursor_info(&spectrum_path),
-        SpectrumFileType::Unknown => return Err(PyOSError::new_err("Unsupported file type")),
+        SpectrumFileType::Unknown => return Err(PyValueError::new_err("Unsupported file type")),
     };
 
     match precursors {
         Ok(precursors) => Ok(precursors),
-        Err(e) => Err(PyOSError::new_err(e.to_string())),
+        Err(e) => Err(PyException::new_err(e.to_string())),
     }
 }
 
@@ -42,12 +42,12 @@ pub fn get_ms2_spectra(spectrum_path: String) -> PyResult<Vec<ms2_spectrum::MS2S
             parse_mzdata::read_ms2_spectra(&spectrum_path)
         }
         SpectrumFileType::BrukerRaw => parse_timsrust::read_ms2_spectra(&spectrum_path),
-        SpectrumFileType::Unknown => return Err(PyOSError::new_err("Unsupported file type")),
+        SpectrumFileType::Unknown => return Err(PyValueError::new_err("Unsupported file type")),
     };
 
     match spectra {
         Ok(spectra) => Ok(spectra),
-        Err(e) => Err(PyOSError::new_err(e.to_string())),
+        Err(e) => Err(PyException::new_err(e.to_string())),
     }
 }
 
