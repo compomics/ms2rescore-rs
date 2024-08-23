@@ -18,10 +18,7 @@ use ms2_spectrum::MS2Spectrum;
 pub fn is_supported_file_type(spectrum_path: String) -> bool {
     let file_type = match_file_type(&spectrum_path);
 
-    match file_type {
-        SpectrumFileType::Unknown => false,
-        _ => true
-    }
+    !matches!(file_type, SpectrumFileType::Unknown)
 }
 
 /// Get mapping of spectrum identifiers to precursor information.
