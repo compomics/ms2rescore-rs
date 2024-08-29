@@ -70,20 +70,6 @@ pub fn read_ms2_spectra(
     })
 }
 
-// pub fn parse_precursor_info_thermo(
-//     spectrum_path: &str,
-//     file_type: SpectrumFileType,
-// ) -> Result<HashMap<String, Precursor>, std::io::Error> {
-//     let reader = mzdata::io::ThermoRawReader::open_path(spectrum_path)?;
-//     Ok(reader
-//         .into_iter()
-//         .filter(|spectrum| {
-//             (spectrum.description.ms_level == 2) && (spectrum.description.precursor.is_some())
-//         })
-//         .map(|spectrum| (spectrum.description.id, Precursor::from(spectrum)))
-//         .collect::<HashMap<String, Precursor>>())
-// }
-
 fn get_charge_from_spectrum(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> Option<usize> {
     spectrum
         .description
