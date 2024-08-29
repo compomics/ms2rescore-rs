@@ -8,6 +8,11 @@ edition = "2021"
 name = "ms2rescore_rs"
 crate-type = ["cdylib"]
 
+[features]
+default = ["thermorawfilereader"]
+
+thermorawfilereader = ["mzdata/thermo"]
+
 [dependencies]
 pyo3 = "0.20.0"
 mzdata = "0.26.0"
