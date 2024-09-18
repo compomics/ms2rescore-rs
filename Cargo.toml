@@ -15,6 +15,5 @@ thermorawfilereader = ["mzdata/thermo"]
 
 [dependencies]
 pyo3 = "0.20.0"
-mzdata = "0.26.0"
+mzdata = {git = "https://github.com/paretje/mzdata.git", branch = "feature/pub-use"}
 timsrust = "0.3.0"
-mzpeaks = "0.19.0"
