@@ -9,11 +9,11 @@ name = "ms2rescore_rs"
 crate-type = ["cdylib"]
 
 [features]
-default = ["thermorawfilereader"]
+default = ["thermo"]
 
-thermorawfilereader = ["mzdata/thermo"]
+thermo = ["mzdata/thermo"]
 
 [dependencies]
 pyo3 = "0.20.0"
-mzdata = "0.30.0"
+mzdata = "0.33.0"
 timsrust = "0.3.0"
