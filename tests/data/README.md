@@ -15,3 +15,7 @@ Converted with tdf2mzml from dda_test.d.
 ## test.mgf
 
 Manually fabricated spectrum.
+
+## small.raw
+
+From the [mzdata repository](https://github.com/mobiusklein/mzdata/blob/v0.27.0/test/data/small.RAW).
