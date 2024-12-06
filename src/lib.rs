@@ -1,8 +1,8 @@
 mod file_types;
+mod ms2_spectrum;
 mod parse_mzdata;
 mod parse_timsrust;
 mod precursor;
-mod ms2_spectrum;
 
 use std::collections::HashMap;
 
@@ -10,8 +10,8 @@ use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::prelude::*;
 
 use file_types::{match_file_type, SpectrumFileType};
-use precursor::Precursor;
 use ms2_spectrum::MS2Spectrum;
+use precursor::Precursor;
 
 /// Check if spectrum path matches a supported file type.
 #[pyfunction]
@@ -27,9 +27,10 @@ pub fn get_precursor_info(spectrum_path: String) -> PyResult<HashMap<String, Pre
     let file_type = match_file_type(&spectrum_path);
 
     let precursors = match file_type {
-        SpectrumFileType::MascotGenericFormat | SpectrumFileType::MzML | SpectrumFileType::MzMLb | SpectrumFileType:: ThermoRaw => {
-            parse_mzdata::parse_precursor_info(&spectrum_path)
-        }
+        SpectrumFileType::MascotGenericFormat
+        | SpectrumFileType::MzML
+        | SpectrumFileType::MzMLb
+        | SpectrumFileType::ThermoRaw => parse_mzdata::parse_precursor_info(&spectrum_path),
         SpectrumFileType::BrukerRaw => parse_timsrust::parse_precursor_info(&spectrum_path),
         SpectrumFileType::Unknown => return Err(PyValueError::new_err("Unsupported file type")),
     };
@@ -46,9 +47,10 @@ pub fn get_ms2_spectra(spectrum_path: String) -> PyResult<Vec<ms2_spectrum::MS2S
     let file_type = match_file_type(&spectrum_path);
 
     let spectra = match file_type {
-        SpectrumFileType::MascotGenericFormat | SpectrumFileType::MzML | SpectrumFileType::MzMLb | SpectrumFileType:: ThermoRaw => {
-            parse_mzdata::read_ms2_spectra(&spectrum_path)
-        }
+        SpectrumFileType::MascotGenericFormat
+        | SpectrumFileType::MzML
+        | SpectrumFileType::MzMLb
+        | SpectrumFileType::ThermoRaw => parse_mzdata::read_ms2_spectra(&spectrum_path),
         SpectrumFileType::BrukerRaw => parse_timsrust::read_ms2_spectra(&spectrum_path),
         SpectrumFileType::Unknown => return Err(PyValueError::new_err("Unsupported file type")),
     };
@@ -59,10 +61,9 @@ pub fn get_ms2_spectra(spectrum_path: String) -> PyResult<Vec<ms2_spectrum::MS2S
     }
 }
 
-
 /// A Python module implemented in Rust.
 #[pymodule]
-fn ms2rescore_rs(_py: Python, m: &PyModule) -> PyResult<()> {
+fn ms2rescore_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Precursor>()?;
     m.add_class::<MS2Spectrum>()?;
     m.add_function(wrap_pyfunction!(is_supported_file_type, m)?)?;
