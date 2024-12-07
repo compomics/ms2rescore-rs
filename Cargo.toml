@@ -14,7 +14,7 @@ thermo = ["mzdata/thermo"]
 
 [dependencies]
 mzdata = "0.39.0"
-timsrust = "0.3.0"
+timsrust = "0.4.1"
 
 [dependencies.pyo3]
 version = "0.23.3"
