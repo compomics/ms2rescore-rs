@@ -48,11 +48,7 @@ impl From<mzdata::spectrum::MultiLayerSpectrum> for MS2Spectrum {
 pub fn parse_precursor_info(
     spectrum_path: &str,
 ) -> Result<HashMap<String, Precursor>, std::io::Error> {
-    let mut reader = MZReader::open_path(spectrum_path)?;
-    if let MZReader::ThermoRaw(inner) = &mut reader {
-        inner.set_centroiding(true);
-    }
-
+    let reader = MZReader::open_path(spectrum_path)?;
     Ok(reader
         .filter(|spectrum| spectrum.description.ms_level == 2)
         .filter_map(|spectrum| {
