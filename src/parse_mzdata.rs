@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use mzdata::params::ParamValue;
-use mzdata::mz_read;
+use mzdata::{params::ParamValue, prelude::*, MZReader};
 
 use crate::ms2_spectrum::MS2Spectrum;
 use crate::precursor::Precursor;
@@ -49,25 +48,27 @@ impl From<mzdata::spectrum::MultiLayerSpectrum> for MS2Spectrum {
 pub fn parse_precursor_info(
     spectrum_path: &str,
 ) -> Result<HashMap<String, Precursor>, std::io::Error> {
-    mz_read!(spectrum_path.as_ref(), reader => {
-        reader.filter(|spectrum| spectrum.description.ms_level == 2)
-            .filter_map(|spectrum| {
-                spectrum.description.precursor.as_ref()?;
-                Some((spectrum.description.id.clone(), Precursor::from(&spectrum)))
-            })
-            .collect::<HashMap<String, Precursor>>()
-    })
+    let reader = MZReader::open_path(spectrum_path)?;
+    Ok(reader
+        .filter(|spectrum| spectrum.description.ms_level == 2)
+        .filter_map(|spectrum| {
+            spectrum.description.precursor.as_ref()?;
+            Some((spectrum.description.id.clone(), Precursor::from(&spectrum)))
+        })
+        .collect::<HashMap<String, Precursor>>())
 }
 
 /// Read MS2 spectra from spectrum files with mzdata
-pub fn read_ms2_spectra(
-    spectrum_path: &str,
-) -> Result<Vec<MS2Spectrum>, std::io::Error> {
-    mz_read!(spectrum_path.as_ref(), reader => {
-        reader.filter(|spectrum| spectrum.description.ms_level == 2)
-            .map(MS2Spectrum::from)
-            .collect::<Vec<MS2Spectrum>>()
-    })
+pub fn read_ms2_spectra(spectrum_path: &str) -> Result<Vec<MS2Spectrum>, std::io::Error> {
+    let mut reader = MZReader::open_path(spectrum_path)?;
+    if let MZReader::ThermoRaw(inner) = &mut reader {
+        inner.set_centroiding(true);
+    }
+
+    Ok(reader
+        .filter(|spectrum| spectrum.description.ms_level == 2)
+        .map(MS2Spectrum::from)
+        .collect::<Vec<MS2Spectrum>>())
 }
 
 fn get_charge_from_spectrum(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> Option<usize> {
