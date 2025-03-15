@@ -77,7 +77,7 @@ fn get_charge_from_spectrum(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> 
         .precursor
         .as_ref()
         .and_then(|p| p.ions.first())
-        .and_then(|i| i.charge.map(|c| c as usize))
+        .and_then(|i| i.charge.map(|c| c.abs() as usize))
         .or_else(|| {
             spectrum
                 .description
@@ -98,6 +98,9 @@ fn get_charge_from_spectrum(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> 
 fn get_im_from_spectrum_description(
     spectrum: &mzdata::spectrum::MultiLayerSpectrum,
 ) -> Option<f64> {
+    if let Some(im) = spectrum.ion_mobility() {
+        return Some(im)
+    }
     spectrum
         .description
         .params
@@ -112,21 +115,19 @@ fn get_im_from_spectrum_description(
 
 /// Try to get ion mobility from the selected ion parameters.
 fn get_im_from_selected_ion(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> Option<f64> {
-    spectrum
-        .description
-        .precursor
-        .as_ref()
-        .and_then(|p| p.ions.first())
-        .and_then(|i| i.params.as_ref())
-        .and_then(|p| {
-            p.iter()
-                .find(|p| {
-                    (p.name == "ion_mobility")
-                        || (p.name == "inverse reduced ion mobility")
-                        || (p.name == "reverse ion mobility")
-                })
-                .and_then(|p| p.value.to_f64().ok())
+    if let Some(ion) = spectrum.precursor().and_then(|p| p.ions.first()) {
+        if let Some(im) = ion.ion_mobility() {
+            return Some(im)
+        }
+        ion.params().iter().find(|p| {
+            (p.name == "ion_mobility")
+                || (p.name == "inverse reduced ion mobility")
+                || (p.name == "reverse ion mobility")
         })
+        .and_then(|p| p.value.to_f64().ok())
+    } else {
+        None
+    }
 }
 
 /// Try to get ion mobility from the first scan parameters.
