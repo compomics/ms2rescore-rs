@@ -77,7 +77,7 @@ fn get_charge_from_spectrum(spectrum: &mzdata::spectrum::MultiLayerSpectrum) -> 
         .precursor
         .as_ref()
         .and_then(|p| p.ions.first())
-        .and_then(|i| i.charge.map(|c| c.abs() as usize))
+        .and_then(|i| i.charge.map(|c| c.unsigned_abs() as usize))
         .or_else(|| {
             spectrum
                 .description
