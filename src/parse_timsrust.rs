@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use timsrust::readers::SpectrumReaderError;
+
 use crate::ms2_spectrum::MS2Spectrum;
 use crate::precursor::Precursor;
 
@@ -30,6 +32,30 @@ impl From<timsrust::Spectrum> for MS2Spectrum {
     }
 }
 
+/// Handles errors from the spectrum reader
+/// by converting each error into std::io::Error
+/// except for the `Decompression`` fails error.
+///
+/// # Arguments
+/// * `err` - The error to handle
+///
+fn handle_spectrum_reader_error(err: SpectrumReaderError) -> Result<(), std::io::Error> {
+    // unfortunately, the timsrust library does not make all errors publicly available yet,
+    // so we have to convert them to string for comparison
+    //
+    // as soon as the development branch of timsrust is merged into the main branch,
+    // we can use the "No binary data" (TdfBlobReaderError::EmptyData) error to be more specific
+    if err.to_string() == "Decompression fails" {
+        println!(">>>>>> `{}`", err.to_string());
+        return Ok(());
+    }
+
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        format!("SpectrumReaderError: {}", err),
+    ))
+}
+
 /// Parse precursor info from spectrum files with timsrust
 pub fn parse_precursor_info(
     spectrum_path: &str,
@@ -37,11 +63,18 @@ pub fn parse_precursor_info(
     let reader = timsrust::readers::SpectrumReader::new(spectrum_path)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
 
-    let spectra = reader
-        .get_all()
+    let spectra = (0..reader.len())
+        .map(|index| match reader.get(index) {
+            Ok(spectrum) => Ok(Some(spectrum)),
+            Err(err) => handle_spectrum_reader_error(err).map(|_| None),
+        })
+        // resolve errors
+        .collect::<Result<Vec<Option<timsrust::Spectrum>>, std::io::Error>>()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?
+        // remove None values
         .into_iter()
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+        .flatten()
+        .collect::<Vec<_>>();
 
     let precursor_info = spectra
         .into_iter()
@@ -59,11 +92,18 @@ pub fn read_ms2_spectra(spectrum_path: &str) -> Result<Vec<MS2Spectrum>, std::io
     let reader = timsrust::readers::SpectrumReader::new(spectrum_path)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
 
-    let spectra = reader
-        .get_all()
+    let spectra = (0..reader.len())
+        .map(|index| match reader.get(index) {
+            Ok(spectrum) => Ok(Some(spectrum)),
+            Err(err) => handle_spectrum_reader_error(err).map(|_| None),
+        })
+        // resolve errors
+        .collect::<Result<Vec<Option<timsrust::Spectrum>>, std::io::Error>>()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?
+        // remove None values
         .into_iter()
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+        .flatten()
+        .collect::<Vec<_>>();
 
     Ok(spectra.into_iter().map(MS2Spectrum::from).collect())
 }
