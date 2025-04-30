@@ -46,7 +46,6 @@ fn handle_spectrum_reader_error(err: SpectrumReaderError) -> Result<(), std::io:
     // as soon as the development branch of timsrust is merged into the main branch,
     // we can use the "No binary data" (TdfBlobReaderError::EmptyData) error to be more specific
     if err.to_string() == "Decompression fails" {
-        println!(">>>>>> `{}`", err.to_string());
         return Ok(());
     }
 
